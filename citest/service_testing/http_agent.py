@@ -21,6 +21,7 @@ import re
 import ssl
 import sys
 import traceback
+import os
 
 try:
  from urllib2 import build_opener
@@ -438,7 +439,15 @@ class HttpAgent(base_agent.BaseAgent):
           _logger=self.logger,
           _context='request')
 
-    if self.__ignore_ssl_cert_verification:
+    # TODO(dpeach): This is a hack to get this working.
+    client_cert_path = os.getenv("CLIENT_CERTIFICATE_PATH")
+    client_cert_key_path = os.getenv("CLIENT_CERTIFICATE_KEY_PATH")
+
+    if client_cert_path is not None and client_cert_key_path is not None:
+      context = ssl._create_unverified_context()
+      context.load_cert_chain(client_cert_path, client_cert_key_path)
+      opener = build_opener(HTTPSHandler(context=context), HTTPCookieProcessor())
+    elif self.__ignore_ssl_cert_verification:
       context = ssl._create_unverified_context()
       opener = build_opener(HTTPSHandler(context=context), HTTPCookieProcessor())
     else:
